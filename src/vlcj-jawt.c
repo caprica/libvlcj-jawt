@@ -46,6 +46,10 @@ JNIEXPORT jlong JNICALL Java_uk_co_caprica_vlcj_jawt_VlcjJawt_getNativeWindowHan
 
     const char* error = NULL;
 
+    if (!component) {
+        return INVALID_HANDLE;
+    }
+
     awt.version = JAWT_VERSION_9;
 
     getAWTResult = JAWT_GetAWT(env, &awt);
