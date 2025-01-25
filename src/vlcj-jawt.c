@@ -31,11 +31,17 @@
  *
  * @param env JNI environment context
  * @param object Java object invoking the method
- * @param component method parameter
+ * @param component component for which to get the native window handle, must be displayable
  * @return window handle if available, or -1
  * @throws RuntimeException if something failed, an extremely unlikely low-level error
  */
 JNIEXPORT jlong JNICALL Java_uk_co_caprica_vlcj_jawt_VlcjJawt_getNativeWindowHandle(JNIEnv* env, jobject object, jobject component) {
+    const char* error = NULL;
+
+    jclass componentClass;
+    jmethodID isDisplayableMethodId;
+    jboolean isDisplayable;
+
     JAWT awt;
     JAWT_DrawingSurface *ds = NULL;
     JAWT_DrawingSurfaceInfo *dsi = NULL;
@@ -44,10 +50,34 @@ JNIEXPORT jlong JNICALL Java_uk_co_caprica_vlcj_jawt_VlcjJawt_getNativeWindowHan
     jboolean getAWTResult;
     jlong handle = INVALID_HANDLE;
 
-    const char* error = NULL;
-
     if (!component) {
         return INVALID_HANDLE;
+    }
+
+    componentClass = (*env)->GetObjectClass(env, component);
+    if ((*env)->ExceptionCheck(env)) {
+        error = "Unable to get component object class";
+        goto cleanup;
+    }
+
+    isDisplayableMethodId = (*env)->GetMethodID(env, componentClass, "isDisplayable", "()Z");
+    if ((*env)->ExceptionCheck(env)) {
+        error = "Unable to get component isDisplayable method";
+        goto cleanup;
+    }
+    if (isDisplayableMethodId == NULL) {
+        error = "No such method for isDisplayable";
+        goto cleanup;
+    }
+
+    isDisplayable = (*env)->CallBooleanMethod(env, component, isDisplayableMethodId);
+    if ((*env)->ExceptionCheck(env)) {
+        error = "Unable to invoke isDisplayable method";
+        goto cleanup;
+    }
+    if (!isDisplayable) {
+        error = "Component must be displayable";
+        goto cleanup;
     }
 
     awt.version = JAWT_VERSION_9;
